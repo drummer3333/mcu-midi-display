@@ -86,10 +86,11 @@ export class OscService {
     initChannelNameMap() {
         this.osc.on('/con/v/ch.*.cfg.name', (msg: Message) => {
             const number = this.addressToChannelNumber(msg.address);
-            let name = (msg.args[0] as string).substring(0, 7);
-            if (!name) {
-                name = this.genericName(number);
+            let fullname = (msg.args[0] as string);
+            if (!fullname) {
+                fullname = this.genericName(number);
             }
+            const name = fullname.substring(0, 7);
 
             const oldName = this.channels[number].name;
             if (oldName) {
@@ -98,7 +99,7 @@ export class OscService {
 
             this.channelMapByName.set(name, number);
             this.channels[number].name = name;
-            this.channels[number].nameSub.next(name);
+            this.channels[number].nameSub.next(fullname);
         })
     }
 
@@ -111,7 +112,7 @@ export class OscService {
 
     getChannelByName(name: string): OscChannelStrip {
         const channelNr = this.channelMapByName.get(name.trim());
-        if (name.startsWith('Jo')) {
+        if (name.startsWith('Aux')) {
             console.log(name, channelNr);
         }
         if (channelNr == undefined || channelNr > MAX_CHANNELS || channelNr < 0) {

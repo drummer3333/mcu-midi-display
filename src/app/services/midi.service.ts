@@ -23,7 +23,7 @@ export class MidiService {
         .catch(err => alert(err));
     }
     onMidiEnable(): any {
-        console.log(WebMidi.outputs);
+        // console.log(WebMidi.outputs.map(o => o.name));
         const toFaderbox = WebMidi.getOutputByName(FADERBOX_NAME);
         const toMixingStation = BRIDGE_TO_MIXINGSTATION.map(name => WebMidi.getOutputByName(name));
 
