@@ -36,10 +36,10 @@ export class MidiService {
 
 }
 
-export interface ChannelStrip {
+export interface MidiChannelStrip {
     lcd1$: Observable<string>;
     lcd2$: Observable<string>;
-    color$: Observable<string>;
+    // color$: Observable<string>;
     rotary$: Observable<RotaryState>;
 }
 
@@ -114,20 +114,20 @@ export class MidiContext {
         // });
     }
 
-    getChannel(index: number, controllerindex = 0): ChannelStrip {
+    getChannel(index: number, controllerindex = 0): MidiChannelStrip {
         if (index > 7) {
             throw new Error("index must be between 0 and 7");
         }
 
         return {
-            color$: initLcdColor(this.sysexMcu$[controllerindex], index),
+            // color$: initLcdColor(this.sysexMcu$[controllerindex], index),
             rotary$: initRotary(this.controlchange$[controllerindex], index),
             lcd1$: initLcd(this.sysexMcu$[controllerindex], index, 0),
             lcd2$: initLcd(this.sysexMcu$[controllerindex], index, 1),
         }
     }
 
-    getMainChannel(): ChannelStrip {
+    getMainChannel(): MidiChannelStrip {
         return this.getChannel(0, 1);
     }
 

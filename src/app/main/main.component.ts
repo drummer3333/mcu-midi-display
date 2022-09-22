@@ -1,5 +1,5 @@
-import { Observable, map } from 'rxjs';
-import { ChannelStrip, MidiService } from './../services/midi.service';
+import { ChannelService, ChannelStrip } from './../services/channel.service';
+import { Observable, map, switchMap, of } from 'rxjs';
 import {Component} from '@angular/core';
 
 @Component({
@@ -9,22 +9,26 @@ import {Component} from '@angular/core';
 
 })
 export class MainComponent {
-    channels$: Observable<Array<ChannelStrip>>;
+    channels$: Array<Observable<ChannelStrip>>;
     busmaster$: Observable<ChannelStrip>;
+    color$: Observable<string>;
 
-    constructor(private midiService: MidiService) {
-        this.channels$ = midiService.midiContext$.pipe(
-            map(c => {
-                const channels = []
-                for (let index = 0; index < 8; index++) {
-                    channels[index] = c.getChannel(index);
+    constructor(channelService: ChannelService) {
+        this.channels$ = []
+        for (let index = 0; index < 8; index++) {
+            this.channels$[index] = channelService.getChannel(index);
+        }
+
+        this.busmaster$ = channelService.getMainChannel()
+
+        this.color$ = this.busmaster$.pipe(
+            switchMap(chan => {
+                if (chan.index == 31) {// Main Out
+                    return of('');
                 }
-                return channels;
-            })
-        );
 
-        this.busmaster$ = midiService.midiContext$.pipe(
-            map(c => c.getMainChannel())
+                return chan.color$
+            })
         )
     }
 

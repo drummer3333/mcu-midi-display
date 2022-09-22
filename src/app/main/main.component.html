@@ -1,4 +1,6 @@
-<div class="channelfader">
-    <app-channel-strip *ngFor="let channel of channels$ | async" class="channelstrip" [channelStrip]="channel"></app-channel-strip>
-    <app-channel-strip class="busmaster" *ngIf="busmaster$ | async as busmaster" [channelStrip]="busmaster"></app-channel-strip>
+<div [class]="color$ | async">
+    <div class="channelfader">
+        <app-channel-strip *ngFor="let channel of channels$ " class="channelstrip" [channelStrip]="channel | async"></app-channel-strip>
+        <app-channel-strip class="busmaster" *ngIf="busmaster$ | async as busmaster" [channelStrip]="busmaster"></app-channel-strip>
+    </div>
 </div>

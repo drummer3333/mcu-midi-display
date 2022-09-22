@@ -6,13 +6,15 @@ import { AppComponent } from './app.component';
 import { MainComponent } from './main/main.component';
 import { ChannelStripComponent } from './channel-strip/channel-strip.component';
 import { LogPipe } from './pipes/log.pipe';
+import { ProgressbarComponent } from './progressbar/progressbar.component';
 
 @NgModule({
   declarations: [
     AppComponent,
     MainComponent,
     ChannelStripComponent,
-    LogPipe
+    LogPipe,
+    ProgressbarComponent
   ],
   imports: [
     BrowserModule,

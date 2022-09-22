@@ -1,6 +1,15 @@
+$black: #2e2e2e
+$red: #d32929
+$green: #41dd29
+$yellow: #f6ef4b
+$blue: #2965d3
+$magenta: #e565d8
+$cyan: #29d3c5
+$white: #dcdcdc
+
 :host
-    background-color: gray
-    width:100%
+    background-color: #808080dd
+    width: 100%
     display: flex
     flex-direction: column
     justify-content: flex-end
@@ -10,42 +19,88 @@
 
 .label
     height: 60px
-    padding: 10px 0
-    background-color: gray
-    width:100%
+    padding: 5px 0
+    width: calc(100% - 10px)
     display: flex
     flex-direction: column
-    justify-content: flex-end
-    align-items: center
+    justify-content: space-around
+    align-items: stretch
     gap: 2px
+    border:  5px solid $black
+    > div
+        text-align: center
+        margin: auto
+
 
 .progressbar
-    background-color: black
-    padding: 3px 8px
-    width: 85%
-    >div
-        width: 0
-        >div
-            background-color: orange
-            margin-left: -5px
-            width: 10px
-            height: 5px
+    margin: 5px  !important
+
 
 
 
 .black
-    background-color: #2e2e2e
+    background-color: $black
+    color: $white
+    border-color: $black
 .red
-    background-color: #d32929
+    background-color: $red
+    color: $black
+    border-color: $red
 .green
-    background-color: #41dd29
+    background-color: $green
+    color: $black
+    border-color: $green
 .yellow
-    background-color: #f6ef4b
+    background-color: $yellow
+    color: $black
+    border-color: $yellow
 .blue
-    background-color: #2965d3
+    background-color: $blue
+    color: $black
+    border-color: $blue
 .magenta
-    background-color: #e565d8
+    background-color: $magenta
+    color: $black
+    border-color: $magenta
 .cyan
-    background-color: #29d3c5
+    background-color: $cyan
+    color: $black
+    border-color: $cyan
 .white
-    background-color: #dcdcdc
+    background-color: $white
+    color: $black
+    border-color: $white
+
+
+.black-inv
+    color: $white
+    background-color: $black
+    border-color: $white
+.red-inv
+    color: $red
+    background-color: $black
+    border-color: $red
+.green-inv
+    color: $green
+    background-color: $black
+    border-color: $green
+.yellow-inv
+    color: $yellow
+    background-color: $black
+    border-color: $yellow
+.blue-inv
+    color: $blue
+    background-color: $black
+    border-color: $blue
+.magenta-inv
+    color: $magenta
+    background-color: $black
+    border-color: $magenta
+.cyan-inv
+    color: $cyan
+    background-color: $black
+    border-color: $cyan
+.white-inv
+    color: $white
+    background-color: $black
+    border-color: $white

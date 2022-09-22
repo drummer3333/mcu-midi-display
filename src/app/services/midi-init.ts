@@ -36,8 +36,16 @@ export function initRotary(cc$: Observable<ControlChangeMessageEvent>, index: nu
     const rotoryController = 0x30 + index;
     return cc$.pipe(
         filter(e => e.controller.number === rotoryController),
-        map(e => <RotaryState>{
-            value: ((e.rawValue || 0) & 0x0f) - 1,
+        map(e => {
+            const v = ((e.rawValue || 0) & 0x0f) - 1;
+            if (v < 0) {
+                return -1
+            }
+            return v * 10;
+        }),
+        startWith(-1),
+        map(value => <RotaryState>{
+            value,
         })
     );
 }

@@ -1,9 +1,8 @@
 
-<div class="label" [class]="channelStrip?.color$ | async">
-    <div> {{ channelStrip?.lcd1$ | async }} </div>
-    <div> {{ channelStrip?.lcd2$ | async }} </div>
-    <div class="progressbar" *ngIf="channelStrip?.rotary$ | async as rotary">
-        <div [style.margin-left]="rotary.value * 10 + '%'"><div *ngIf="rotary.value >= 0"></div></div>
+<ng-container *ngIf="channelStrip$ | async as cs">
+    <div class="label" [class]="cs.color$ | async">
+        <div> {{ cs.name$ | async }} </div>
+        <div> {{ cs.lcd2$ | async }} </div>
+        <div class="progressbar"> <app-progressbar [value$]="cs.rotary$"></app-progressbar> </div>
     </div>
-</div>
-
+</ng-container>
