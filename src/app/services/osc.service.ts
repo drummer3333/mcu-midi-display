@@ -112,9 +112,7 @@ export class OscService {
 
     getChannelByName(name: string): OscChannelStrip {
         const channelNr = this.channelMapByName.get(name.trim());
-        if (name.startsWith('Aux')) {
-            console.log(name, channelNr);
-        }
+
         if (channelNr == undefined || channelNr > MAX_CHANNELS || channelNr < 0) {
             return EMPTY_CHANNEL;
         }
