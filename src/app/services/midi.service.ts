@@ -1,10 +1,11 @@
 import { Injectable, NgZone } from '@angular/core';
 import { ReplaySubject, Subject, Observable, of, startWith, share, map, filter, tap, shareReplay, merge } from 'rxjs';
-import { ControlChangeMessageEvent, Input, MessageEvent, Output, WebMidi } from 'webmidi';
+import { ControlChangeMessageEvent, Input, Message, MessageEvent, Output, WebMidi } from 'webmidi';
 import { arraysEqual } from '../helper/helper';
-import { initLcd, initLcdColor, initRotary, RotaryState } from './midi-init';
+import { initLcd, initLcdColor, initRotary, initVU, RotaryState, VUState } from './midi-init';
 
 const FADERBOX_NAME = "Platform M V2.01";
+const ROTARYBOX_NAME = "X-TOUCH MINI";
 const BRIDGE_TO_MIXINGSTATION = ["toMixing1", "toMixing2"];
 const BRIDGE_FROM_MIXINGSTATION = ["fromMixing1", "fromMixing2"];
 
@@ -22,16 +23,12 @@ export class MidiService {
         .then(_ => this.onMidiEnable())
         .catch(err => alert(err));
     }
+
     onMidiEnable(): any {
         // console.log(WebMidi.outputs.map(o => o.name));
-        const toFaderbox = WebMidi.getOutputByName(FADERBOX_NAME);
-        const toMixingStation = BRIDGE_TO_MIXINGSTATION.map(name => WebMidi.getOutputByName(name));
 
-        const fromFaderbox = WebMidi.getInputByName(FADERBOX_NAME);
-        const fromMixingStation = BRIDGE_FROM_MIXINGSTATION.map(name => WebMidi.getInputByName(name));
 
-        this.ngZone.run(() => this.midiContext$.next(new MidiContext(this.ngZone, toFaderbox, fromFaderbox, toMixingStation,  fromMixingStation)))
-
+        this.ngZone.run(() => this.midiContext$.next(new MidiContext(this.ngZone)));
     }
 
 }
@@ -41,50 +38,74 @@ export interface MidiChannelStrip {
     lcd2$: Observable<string>;
     // color$: Observable<string>;
     rotary$: Observable<RotaryState>;
+    vu$: Observable<VUState>;
 }
 
-
 export class MidiContext {
-    private sysexMcu$: Observable<MessageEvent>[];
-    private controlchange$: Observable<ControlChangeMessageEvent>[];
+    private readonly toFaderbox: Output;
+    private readonly fromFaderbox: Input;
+    private readonly toRotarybox: Output;
+    private readonly fromRotarybox: Input;
+    private readonly toMixingStation: Output[];
+    private readonly fromMixingStation: Input[];
+
+    private readonly sysexMcu$: Observable<MessageEvent>[];
+    private readonly controlchange$: Observable<ControlChangeMessageEvent>[];
+    private readonly vu$: Observable<VUState>[];
+
 
     constructor(
         private ngZone: NgZone,
-        private toFaderbox: Output,
-        private fromFaderbox: Input,
-        private toMixingStation: Output[],
-        private fromMixingStation: Input[]
     ) {
-        console.log(toFaderbox,
-            fromFaderbox,
-            toMixingStation,
-            fromMixingStation)
-        fromFaderbox.addForwarder(toMixingStation[0]);
-        fromMixingStation[0].addForwarder(toFaderbox);
+        // console.log(WebMidi.outputs.map(o => o.name));
+
+        this.toFaderbox = WebMidi.getOutputByName(FADERBOX_NAME);
+        this.toRotarybox = WebMidi.getOutputByName(ROTARYBOX_NAME);
+        this.toMixingStation = BRIDGE_TO_MIXINGSTATION.map(name => WebMidi.getOutputByName(name));
+
+        this.fromFaderbox = WebMidi.getInputByName(FADERBOX_NAME);
+        this.fromRotarybox = WebMidi.getInputByName(ROTARYBOX_NAME);
+        this.fromMixingStation = BRIDGE_FROM_MIXINGSTATION.map(name => WebMidi.getInputByName(name));
+
+        this.fromFaderbox.addForwarder(this.toMixingStation[0]);
+        this.fromMixingStation[0].addForwarder(this.toFaderbox);
+
+        this.fromRotarybox.addForwarder(this.toMixingStation[1]);
+        this.fromMixingStation[1].addForwarder(this.toRotarybox);
 
         // fromFaderbox.addListener('midimessage', e => {
         //     console.log('midimessage', e.message.data.map( n => n.toString(16)).join(" ") + " - " + e.message.data.slice(7, -1).map(n => String.fromCharCode(n)).join(""), e);
         // });
 
-        // fromMixingStation.addListener('midimessage', e => {
-        //     if ( (e.message.data[0] == 0xd0 )) { //&& (e.message.data[1] == 0xd30 || e.message.data[1] == 0x40)) {
-        //         return
+        // this.fromMixingStation[0].addListener('channelaftertouch', e => {
+
+        //     if ( (e.message.data[0] == 0xd0 && (e.message.data[1] & 0xf0) == 0)) {
+        //         console.log('channelaftertouch', e.message.data.map( n => n.toString(16)).join(" ") + " - " + e.message.data.slice(7, -1).map(n => String.fromCharCode(n)).join(""), e);
         //     }
-        //     if (e.message.data[0] == 0xf0 && (e.message.data[5] == 0x72 || e.message.data[5] == 0x12)) {
-        //         return
-        //     }
-        //     console.log('midimessage', e.message.data.map( n => n.toString(16)).join(" ") + " - " + e.message.data.slice(7, -1).map(n => String.fromCharCode(n)).join(""), e);
         // });
 
-        // fromMixingStation.addListener('noteon', e => {
-        //     console.log('noteon', e);
+        // this.fromMixingStation[0].addListener('noteon', e => {
 
         // });
         // fromMixingStation.addListener('noteoff', e => {
         //     console.log('noteoff', e);
 
         // });
-        this.controlchange$ =  fromMixingStation.map(input => {
+
+        this.vu$ = this.fromMixingStation.map(input => {
+            const subject = new Subject<VUState>();
+            input.addListener('channelaftertouch', e => {
+                if (e.message.data[0] == 0xd0) {
+                    this.ngZone.run(() => subject.next({
+                        channel: (e.message.data[1] & 0xf0) >> 4,
+                        value: e.message.data[1] & 0x0f
+                    }));
+                }
+            });
+            return subject
+        });
+
+        this.controlchange$ =  this.fromMixingStation.map(input => {
             const subject = new Subject<ControlChangeMessageEvent>();
             input.addListener('controlchange', e => {
                 this.ngZone.run(() => subject.next(e));
@@ -92,9 +113,7 @@ export class MidiContext {
             return subject
         });
 
-            // console.log('midimessage', e.controller.number, e.message.data.map( n => n.toString(16)).join(" ") + " - " + e.message.data.slice(7, -1).map(n => String.fromCharCode(n)).join(""), e);
-
-        this.sysexMcu$ = fromMixingStation.map(input => {
+        this.sysexMcu$ = this.fromMixingStation.map(input => {
             const subject = new Subject<MessageEvent>();
             input.addListener('sysex', e => {
                 if (arraysEqual(e.message.data.slice(0, 4), [0xf0, 0x00, 0x00, 0x66])) {
@@ -103,16 +122,13 @@ export class MidiContext {
             });
 
             return subject
-        })
+        });
 
         merge(...this.sysexMcu$).pipe(
             filter(e => e.message.data[5] !== 0x12 && e.message.data[5] !== 0x72)
         ).subscribe(x => console.log(x.message.data.map( n => n.toString(16)).join(" ") + " - " + x.message.data.slice(7, -1).map(n => String.fromCharCode(n)).join("")) )
-
-        // fromFaderbox.addListener('midimessage', e => {
-        //     console.log('midimessage', e.message.data.map( n => n.toString(16)).join(" ") );
-        // });
     }
+
 
     getChannel(index: number, controllerindex = 0): MidiChannelStrip {
         if (index > 7) {
@@ -124,11 +140,12 @@ export class MidiContext {
             rotary$: initRotary(this.controlchange$[controllerindex], index),
             lcd1$: initLcd(this.sysexMcu$[controllerindex], index, 0),
             lcd2$: initLcd(this.sysexMcu$[controllerindex], index, 1),
+            vu$: initVU(this.vu$[controllerindex], index),
         }
     }
 
     getMainChannel(): MidiChannelStrip {
-        return this.getChannel(0, 1);
+        return this.getChannel(7, 1);
     }
 
 

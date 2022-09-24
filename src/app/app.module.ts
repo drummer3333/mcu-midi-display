@@ -7,6 +7,7 @@ import { MainComponent } from './main/main.component';
 import { ChannelStripComponent } from './channel-strip/channel-strip.component';
 import { LogPipe } from './pipes/log.pipe';
 import { ProgressbarComponent } from './progressbar/progressbar.component';
+import { VuMeterComponent } from './vu-meter/vu-meter.component';
 
 @NgModule({
   declarations: [
@@ -14,7 +15,8 @@ import { ProgressbarComponent } from './progressbar/progressbar.component';
     MainComponent,
     ChannelStripComponent,
     LogPipe,
-    ProgressbarComponent
+    ProgressbarComponent,
+    VuMeterComponent
   ],
   imports: [
     BrowserModule,

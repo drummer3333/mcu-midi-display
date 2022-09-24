@@ -1,4 +1,4 @@
-import { Observable, filter, map, startWith, share } from 'rxjs';
+import { Observable, filter, map, startWith, share, combineLatest, tap, shareReplay } from 'rxjs';
 import { ControlChangeMessageEvent, MessageEvent } from 'webmidi';
 
 export function initLcd(sysex$: Observable<MessageEvent>, index: number, lcd: number): Observable<string> {
@@ -48,4 +48,15 @@ export function initRotary(cc$: Observable<ControlChangeMessageEvent>, index: nu
             value,
         })
     );
+}
+
+
+export interface VUState {
+    channel: number;
+    value: number;
+}
+export function initVU(base$: Observable<VUState>, index: number): Observable<VUState> {
+    return base$.pipe(
+        filter(e => e.channel == index),
+    );;
 }

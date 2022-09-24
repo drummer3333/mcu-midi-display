@@ -1,8 +1,11 @@
 
 <ng-container *ngIf="channelStrip$ | async as cs">
+    <div class="">
+        <app-vu-meter [vu]="cs.vu$"></app-vu-meter>
+    </div>
     <div class="label" [class]="cs.color$ | async">
         <div> {{ cs.name$ | async }} </div>
         <div> {{ cs.lcd2$ | async }} </div>
-        <div class="progressbar"> <app-progressbar [value$]="cs.rotary$"></app-progressbar> </div>
     </div>
+    <div class="progressbar"> <app-progressbar [value$]="cs.rotary$"></app-progressbar> </div>
 </ng-container>

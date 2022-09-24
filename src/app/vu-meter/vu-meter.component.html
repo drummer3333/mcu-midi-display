@@ -1,0 +1,12 @@
+<div class="vu-meter" *ngIf="vu$ | async as value">
+    <div
+        *ngFor="let led of leds"
+        class="led"
+        [class.green]="led <= ORANGE_LED"
+        [class.yellow]="led > ORANGE_LED"
+        [class.active]="value.value > led"
+    >
+    </div>
+    <div class="led peak" [class.active]="value.value == PEAK_LED"></div>
+</div>
+
