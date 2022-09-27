@@ -1,15 +1,18 @@
-import { Observable, fromEvent, of, map, tap, shareReplay, ReplaySubject } from 'rxjs';
+import { MidiChannelStrip } from './midi.service';
+import { Observable, fromEvent, of, map, tap, shareReplay, ReplaySubject, Subject } from 'rxjs';
 import { Injectable } from '@angular/core';
 import * as OSC from 'osc-js';
 
 export interface OscChannelStrip {
-    name: string;
-    index: number;
+    index$: Observable<number>;
     name$: Observable<string>;
     color$: Observable<string>;
+    lvl$: Observable<number>;
 }
 
 interface OscChannelStripInternal extends OscChannelStrip {
+    name: string;
+    index: number;
     nameSub: ReplaySubject<string>;
 }
 
@@ -33,12 +36,6 @@ const COLORS = [
 ]
 
 const MAX_CHANNELS = 35;
-const EMPTY_CHANNEL: OscChannelStrip  = {
-    name: '',
-    name$: of(''),
-    color$: of(''),
-    index: -1,
-}
 
 @Injectable({
   providedIn: 'root'
@@ -50,6 +47,7 @@ export class OscService {
 
 
     private channelMapByName = new Map<string, number>();
+    private channelMapByName$ = new Subject<Map<string, number>>();
     private channels = new Array<OscChannelStripInternal>();
 
     constructor() {
@@ -65,6 +63,7 @@ export class OscService {
             for (let index = 0; index <= MAX_CHANNELS; index++) {
                 this.osc.send( new OSC.Message(`/con/v/ch.${index}.cfg.name`))
                 this.osc.send( new OSC.Message(`/con/v/ch.${index}.cfg.color`))
+                this.osc.send( new OSC.Message(`/con/v/ch.${index}.mix.lvl`))
             }
         });
         this.osc.open();
@@ -78,7 +77,9 @@ export class OscService {
                 name$: nameSub,
                 color$: this.getChannelColor(index),
                 nameSub,
-                index
+                index,
+                index$: of(index),
+                lvl$: this.getChannelValueNumber(index, 'mix.lvl')
             }
         }
     }
@@ -90,7 +91,7 @@ export class OscService {
             if (!fullname) {
                 fullname = this.genericName(number);
             }
-            const name = fullname.substring(0, 7);
+            const name = fullname.substring(0, 7).trim();
 
             const oldName = this.channels[number].name;
             if (oldName) {
@@ -100,6 +101,7 @@ export class OscService {
             this.channelMapByName.set(name, number);
             this.channels[number].name = name;
             this.channels[number].nameSub.next(fullname);
+            this.channelMapByName$.next(this.channelMapByName);
         })
     }
 
@@ -110,11 +112,11 @@ export class OscService {
         return parseInt(channelNumber);
     }
 
-    getChannelByName(name: string): OscChannelStrip {
+    getChannelByName(name: string, midiChannelStrip: MidiChannelStrip): OscChannelStrip {
         const channelNr = this.channelMapByName.get(name.trim());
 
         if (channelNr == undefined || channelNr > MAX_CHANNELS || channelNr < 0) {
-            return EMPTY_CHANNEL;
+            return this.emptyChannel(name, midiChannelStrip);
         }
 
 
@@ -135,6 +137,12 @@ export class OscService {
     getChannelValueString(channel: number, address: string): Observable<string> {
         return this.getChannelValue(channel, address).pipe(
             map(msg => msg.args[0] as string),
+        )
+    }
+
+    getChannelValueNumber(channel: number, address: string): Observable<number> {
+        return this.getChannelValue(channel, address).pipe(
+            map(msg => msg.args[0] as number),
         )
     }
 
@@ -178,5 +186,14 @@ export class OscService {
         }
 
         return '';
+    }
+
+    emptyChannel(name: string, midiChannelStrip: MidiChannelStrip): OscChannelStrip {
+        return {
+            name$: of(name),
+            color$: midiChannelStrip.mColor$,
+            index$: of(-1),
+            lvl$: of(-100)
+        }
     }
 }

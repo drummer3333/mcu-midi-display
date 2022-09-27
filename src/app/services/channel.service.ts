@@ -1,4 +1,4 @@
-import { Observable, of, map, switchMap } from 'rxjs';
+import { Observable, of, map, switchMap, share } from 'rxjs';
 import { OscChannelStrip, OscService } from './osc.service';
 import { Injectable, Pipe } from '@angular/core';
 import { MidiService, MidiChannelStrip, MidiContext } from './midi.service';
@@ -27,18 +27,23 @@ export class ChannelService {
     enrichedChannel(selector: ((ctx: MidiContext) => MidiChannelStrip)): Observable<ChannelStrip> {
         return this.midiService.midiContext$.pipe(
             map(selector),
-            switchMap(midiChannelStrip => this.enrichMidi(midiChannelStrip))
+            map(midiChannelStrip => this.enrichMidi(midiChannelStrip))
         )
     }
 
-    enrichMidi(midiChannelStrip: MidiChannelStrip): Observable<ChannelStrip> {
-        return midiChannelStrip.lcd1$.pipe(
-            map(name => {
-                return {
-                    ...midiChannelStrip,
-                    ...this.oscService.getChannelByName(name)
-                }
-            })
+    enrichMidi(midiChannelStrip: MidiChannelStrip): ChannelStrip {
+        const osc = midiChannelStrip.lcd1$.pipe(
+            map(name => this.oscService.getChannelByName(name, midiChannelStrip)),
+            share()
         );
+
+        return {
+            ...midiChannelStrip,
+            name$: osc.pipe(switchMap(c => c.name$)),
+            color$: osc.pipe(switchMap(c => c.color$)),
+            index$: osc.pipe(switchMap(c => c.index$)),
+            lvl$: osc.pipe(switchMap(c => c.lvl$)),
+        }
     }
 }
+

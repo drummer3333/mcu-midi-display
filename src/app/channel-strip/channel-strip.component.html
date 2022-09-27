@@ -4,6 +4,7 @@
         <app-vu-meter [vu]="cs.vu$"></app-vu-meter>
     </div>
     <div class="label" [class]="cs.color$ | async">
+        <div> {{ cs.lvl$ | async | number: '1.1-1' }} </div>
         <div> {{ cs.name$ | async }} </div>
         <div> {{ cs.lcd2$ | async }} </div>
     </div>

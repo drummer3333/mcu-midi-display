@@ -4,8 +4,8 @@ import { ControlChangeMessageEvent, Input, Message, MessageEvent, Output, WebMid
 import { arraysEqual } from '../helper/helper';
 import { initLcd, initLcdColor, initRotary, initVU, RotaryState, VUState } from './midi-init';
 
-const FADERBOX_NAME = "Platform M V2.01";
-const ROTARYBOX_NAME = "X-TOUCH MINI";
+// const FADERBOX_NAME = "Platform M V2.01";
+// const ROTARYBOX_NAME = "X-TOUCH MINI";
 const BRIDGE_TO_MIXINGSTATION = ["toMixing1", "toMixing2"];
 const BRIDGE_FROM_MIXINGSTATION = ["fromMixing1", "fromMixing2"];
 
@@ -36,16 +36,16 @@ export class MidiService {
 export interface MidiChannelStrip {
     lcd1$: Observable<string>;
     lcd2$: Observable<string>;
-    // color$: Observable<string>;
+    mColor$: Observable<string>;
     rotary$: Observable<RotaryState>;
     vu$: Observable<VUState>;
 }
 
 export class MidiContext {
-    private readonly toFaderbox: Output;
-    private readonly fromFaderbox: Input;
-    private readonly toRotarybox: Output;
-    private readonly fromRotarybox: Input;
+    // private readonly toFaderbox: Output;
+    // private readonly fromFaderbox: Input;
+    // private readonly toRotarybox: Output;
+    // private readonly fromRotarybox: Input;
     private readonly toMixingStation: Output[];
     private readonly fromMixingStation: Input[];
 
@@ -58,20 +58,25 @@ export class MidiContext {
         private ngZone: NgZone,
     ) {
         // console.log(WebMidi.outputs.map(o => o.name));
+        // console.log(WebMidi.inputs.map(o => o.name));
 
-        this.toFaderbox = WebMidi.getOutputByName(FADERBOX_NAME);
-        this.toRotarybox = WebMidi.getOutputByName(ROTARYBOX_NAME);
+        // this.toFaderbox = WebMidi.getOutputByName(FADERBOX_NAME);
+        // this.toRotarybox = WebMidi.getOutputByName(ROTARYBOX_NAME);
         this.toMixingStation = BRIDGE_TO_MIXINGSTATION.map(name => WebMidi.getOutputByName(name));
 
-        this.fromFaderbox = WebMidi.getInputByName(FADERBOX_NAME);
-        this.fromRotarybox = WebMidi.getInputByName(ROTARYBOX_NAME);
+        // this.fromFaderbox = WebMidi.getInputByName(FADERBOX_NAME);
+        // this.fromRotarybox = WebMidi.getInputByName(ROTARYBOX_NAME);
         this.fromMixingStation = BRIDGE_FROM_MIXINGSTATION.map(name => WebMidi.getInputByName(name));
 
-        this.fromFaderbox.addForwarder(this.toMixingStation[0]);
-        this.fromMixingStation[0].addForwarder(this.toFaderbox);
+        // this.fromFaderbox.addForwarder(this.toMixingStation[0]);
+        // this.fromMixingStation[0].addForwarder(this.toFaderbox);
 
-        this.fromRotarybox.addForwarder(this.toMixingStation[1]);
-        this.fromMixingStation[1].addForwarder(this.toRotarybox);
+        // this.fromRotarybox.addForwarder(this.toMixingStation[1]);
+        // this.fromMixingStation[1].addForwarder(this.toRotarybox);
+
+        // this.fromRotarybox.addListener('midimessage', e => {
+        //         console.log('midimessage', e.message.data.map( n => n.toString(16)).join(" ") + " - " + e.message.data.slice(7, -1).map(n => String.fromCharCode(n)).join(""), e);
+        //     });
 
         // fromFaderbox.addListener('midimessage', e => {
         //     console.log('midimessage', e.message.data.map( n => n.toString(16)).join(" ") + " - " + e.message.data.slice(7, -1).map(n => String.fromCharCode(n)).join(""), e);
@@ -136,7 +141,7 @@ export class MidiContext {
         }
 
         return {
-            // color$: initLcdColor(this.sysexMcu$[controllerindex], index),
+            mColor$: initLcdColor(this.sysexMcu$[controllerindex], index),
             rotary$: initRotary(this.controlchange$[controllerindex], index),
             lcd1$: initLcd(this.sysexMcu$[controllerindex], index, 0),
             lcd2$: initLcd(this.sysexMcu$[controllerindex], index, 1),
