@@ -3,7 +3,13 @@ import { OscChannelStrip, OscService } from './osc.service';
 import { Injectable, Pipe } from '@angular/core';
 import { MidiService, MidiChannelStrip, MidiContext } from './midi.service';
 
-export type ChannelStrip = MidiChannelStrip & OscChannelStrip;
+export type ChannelStrip =
+    Pick<MidiChannelStrip, 'rotary$' | 'vu$' | 'lcd2$'> &
+    OscChannelStrip &
+    {
+        sofLvl$: Observable<number>
+        show$: Observable<boolean>
+    };
 
 
 
@@ -11,39 +17,62 @@ export type ChannelStrip = MidiChannelStrip & OscChannelStrip;
   providedIn: 'root'
 })
 export class ChannelService {
+    public mainChannel$: Observable<ChannelStrip>;
+    public sof$: Observable<number>;
 
     constructor(private midiService: MidiService, private oscService: OscService) {
+        this.mainChannel$ = this.getMainChannel();
+        this.sof$ = midiService.midiContext$.pipe(
+            switchMap(ctx => ctx.getSof())
+        )
     }
 
 
     getChannel(index: number): Observable<ChannelStrip> {
-        return this.enrichedChannel(ctx => ctx.getChannel(index));
-    }
-    getMainChannel(): Observable<ChannelStrip> {
-        return this.enrichedChannel(ctx => ctx.getMainChannel());
+        return this.enrichedChannel(ctx => ctx.getChannel(index), false, index);
     }
 
+    private getMainChannel(): Observable<ChannelStrip> {
+        return this.enrichedChannel(ctx => ctx.getMainChannel(), true, -1);
+    }
 
-    enrichedChannel(selector: ((ctx: MidiContext) => MidiChannelStrip)): Observable<ChannelStrip> {
+    private enrichedChannel(selector: ((ctx: MidiContext) => MidiChannelStrip), main: boolean, index: number): Observable<ChannelStrip> {
         return this.midiService.midiContext$.pipe(
             map(selector),
-            map(midiChannelStrip => this.enrichMidi(midiChannelStrip))
+            map(midiChannelStrip => this.enrichMidi(midiChannelStrip, main, index))
         )
     }
 
-    enrichMidi(midiChannelStrip: MidiChannelStrip): ChannelStrip {
-        const osc = midiChannelStrip.lcd1$.pipe(
-            map(name => this.oscService.getChannelByName(name, midiChannelStrip)),
-            share()
-        );
+    private enrichMidi(midiChannelStrip: MidiChannelStrip, main: boolean, index: number): ChannelStrip {
+        const osc = this.oscService.enhanceChannel(midiChannelStrip)
 
-        return {
+        return <ChannelStrip>{
             ...midiChannelStrip,
-            name$: osc.pipe(switchMap(c => c.name$)),
-            color$: osc.pipe(switchMap(c => c.color$)),
-            index$: osc.pipe(switchMap(c => c.index$)),
-            lvl$: osc.pipe(switchMap(c => c.lvl$)),
+            ...osc,
+            sofLvl$: this.getSofLvl(osc, main),
+            show$: midiChannelStrip.lcd1$.pipe(map(l => !!l.trim()))
+        };
+    }
+
+
+
+    getSofLvl(osc: OscChannelStrip, main: boolean): Observable<number> {
+        if (main) {
+            return osc.lvl$
         }
+
+        return this.sof$.pipe(
+            switchMap(sof => {
+                console.log('sof', sof);
+                if (sof < 0) {
+                    return osc.lvl$
+                } else if (sof < 10) {
+                    return osc.sendLvl$[sof]
+                } else {
+                    return of() // TODO Gain
+                }
+            })
+        );
     }
 }
 

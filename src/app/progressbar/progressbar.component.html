@@ -1,3 +1,3 @@
 <div class="progressbar" *ngIf="uiValue$ | async as progress">
-    <div [style.margin-left]="progress.value + '%'"><div *ngIf="progress.value >= 0"></div></div>
+    <div [style.margin-left]="progress.value + '%'"><div *ngIf="progress.value >= 0 && progress.value <= 100"></div></div>
 </div>

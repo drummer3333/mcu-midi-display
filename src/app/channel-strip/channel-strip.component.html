@@ -1,12 +1,25 @@
 
 <ng-container *ngIf="channelStrip$ | async as cs">
-    <div class="">
-        <app-vu-meter [vu]="cs.vu$"></app-vu-meter>
+    <div [hidden]="!(cs.show$ | async)">
+        <div class="send-vu">
+            <div class="sends">
+                <div class="progressbar">
+                    <div >G</div>
+                    <app-progressbar [value$]="cs.headAmp$"></app-progressbar>
+                </div>
+                <div *ngFor="let send of cs.sendLvl$; let i=index" class="progressbar">
+                    <div *ngIf="i < 6">S{{ i + 1 }}</div>
+                    <div *ngIf="i >= 6">F{{ i - 5 }}</div>
+                    <app-progressbar [value$]="send | sendValue" [low]="-90" [high]="10"></app-progressbar>
+                </div>
+            </div>
+            <app-vu-meter [vu]="cs.vu$"></app-vu-meter>
+        </div>
+        <div class="label" [class]="cs.color$ | async">
+            <div> {{ cs.sofLvl$ | async | number: '1.1-1' }} </div>
+            <div> {{ cs.name$ | async }} </div>
+            <div> {{ cs.lcd2$ | async }} </div>
+        </div>
+        <div class="progressbar"> <app-progressbar [value$]="cs.rotary$"></app-progressbar> </div>
     </div>
-    <div class="label" [class]="cs.color$ | async">
-        <div> {{ cs.lvl$ | async | number: '1.1-1' }} </div>
-        <div> {{ cs.name$ | async }} </div>
-        <div> {{ cs.lcd2$ | async }} </div>
-    </div>
-    <div class="progressbar"> <app-progressbar [value$]="cs.rotary$"></app-progressbar> </div>
 </ng-container>

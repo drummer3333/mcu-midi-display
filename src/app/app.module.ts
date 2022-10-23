@@ -8,6 +8,7 @@ import { ChannelStripComponent } from './channel-strip/channel-strip.component';
 import { LogPipe } from './pipes/log.pipe';
 import { ProgressbarComponent } from './progressbar/progressbar.component';
 import { VuMeterComponent } from './vu-meter/vu-meter.component';
+import { SendValuePipe } from './channel-strip/send-value.pipe';
 
 @NgModule({
   declarations: [
@@ -16,7 +17,8 @@ import { VuMeterComponent } from './vu-meter/vu-meter.component';
     ChannelStripComponent,
     LogPipe,
     ProgressbarComponent,
-    VuMeterComponent
+    VuMeterComponent,
+    SendValuePipe
   ],
   imports: [
     BrowserModule,

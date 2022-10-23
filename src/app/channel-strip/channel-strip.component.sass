@@ -17,6 +17,30 @@ $white: #dcdcdc
     gap: 3px
     height: 100%
 
+.send-vu
+    display: flex
+    flex-direction: row
+    justify-content: space-between
+    align-items: stretch
+    gap: 3px
+    app-vu-meter
+        flex-basis: 20px
+    .sends
+        flex-basis: 100%
+
+.sends .progressbar
+    display: flex
+    flex-direction: row
+    justify-content: space-between
+    align-items: stretch
+    gap: 3px
+    font-size: 10px
+    margin: 2px  !important
+    div
+        flex: 1 0 15px
+    app-progressbar
+        flex-basis: 100%
+
 .label
     height: 60px
     padding: 5px 0

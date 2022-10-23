@@ -1,4 +1,4 @@
-import { Observable, filter, map, startWith, share, combineLatest, tap, shareReplay } from 'rxjs';
+import { Observable, filter, map, startWith, share } from 'rxjs';
 import { ControlChangeMessageEvent, MessageEvent } from 'webmidi';
 
 export function initLcd(sysex$: Observable<MessageEvent>, index: number, lcd: number): Observable<string> {
@@ -20,11 +20,11 @@ const colors = [
     "cyan",
     "white",
 ]
-export function initLcdColor(sysex$: Observable<MessageEvent>, index: number): Observable<string> {
+export function initLcdColor(sysex$: Observable<MessageEvent>, index: number): Observable<number> {
     return sysex$.pipe(
         filter(e => e.message.data[5] === 0x72),
-        map( e => colors[e.message.data[6 + index]]),
-        startWith(''),
+        map( e => e.message.data[6 + index]),
+        startWith(0),
         share()
     )
 }
@@ -58,5 +58,6 @@ export interface VUState {
 export function initVU(base$: Observable<VUState>, index: number): Observable<VUState> {
     return base$.pipe(
         filter(e => e.channel == index),
-    );;
+    );
 }
+

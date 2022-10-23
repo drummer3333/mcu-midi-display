@@ -1,5 +1,5 @@
 import { ChannelService, ChannelStrip } from './../services/channel.service';
-import { Observable, map, switchMap, of } from 'rxjs';
+import { Observable, map, switchMap, of, tap, distinctUntilChanged } from 'rxjs';
 import {Component} from '@angular/core';
 
 @Component({
@@ -19,7 +19,7 @@ export class MainComponent {
             this.channels$[index] = channelService.getChannel(index);
         }
 
-        this.busmaster$ = channelService.getMainChannel()
+        this.busmaster$ = channelService.mainChannel$
 
         this.color$ = this.busmaster$.pipe(
             switchMap(chan => chan.index$.pipe(
@@ -30,7 +30,8 @@ export class MainComponent {
                         return chan.color$
                     })
                 )
-            )
+            ),
+            distinctUntilChanged(),
         )
     }
 

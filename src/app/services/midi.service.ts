@@ -1,6 +1,6 @@
 import { Injectable, NgZone } from '@angular/core';
-import { ReplaySubject, Subject, Observable, of, startWith, share, map, filter, tap, shareReplay, merge } from 'rxjs';
-import { ControlChangeMessageEvent, Input, Message, MessageEvent, Output, WebMidi } from 'webmidi';
+import { ReplaySubject, Subject, Observable, of, startWith, share, map, filter, tap, shareReplay, merge, distinctUntilChanged } from 'rxjs';
+import { ControlChangeMessageEvent, Input, Message, MessageEvent, NoteMessageEvent, Output, WebMidi } from 'webmidi';
 import { arraysEqual } from '../helper/helper';
 import { initLcd, initLcdColor, initRotary, initVU, RotaryState, VUState } from './midi-init';
 
@@ -36,7 +36,7 @@ export class MidiService {
 export interface MidiChannelStrip {
     lcd1$: Observable<string>;
     lcd2$: Observable<string>;
-    mColor$: Observable<string>;
+    mColor$: Observable<number>;
     rotary$: Observable<RotaryState>;
     vu$: Observable<VUState>;
 }
@@ -52,6 +52,7 @@ export class MidiContext {
     private readonly sysexMcu$: Observable<MessageEvent>[];
     private readonly controlchange$: Observable<ControlChangeMessageEvent>[];
     private readonly vu$: Observable<VUState>[];
+    private readonly noteOn$: Observable<NoteMessageEvent>[];
 
 
     constructor(
@@ -90,12 +91,23 @@ export class MidiContext {
         // });
 
         // this.fromMixingStation[0].addListener('noteon', e => {
-
+        //     console.log('noteon', e);
+        //     console.log('noteState', (e.target as any).notesState.slice(54, 65));
         // });
-        // fromMixingStation.addListener('noteoff', e => {
+        // this.fromMixingStation[0].addListener('noteoff', e => {
         //     console.log('noteoff', e);
-
         // });
+
+        this.noteOn$ = this.fromMixingStation.map(input => {
+            const subject = new Subject<NoteMessageEvent>();
+            input.addListener('noteon', e => {
+                this.ngZone.run(() => subject.next(e));
+            });
+            input.addListener('noteoff', e => {
+                this.ngZone.run(() => subject.next(e));
+            });
+            return subject
+        });
 
         this.vu$ = this.fromMixingStation.map(input => {
             const subject = new Subject<VUState>();
@@ -153,7 +165,25 @@ export class MidiContext {
         return this.getChannel(7, 1);
     }
 
+    /**
+     *  F1 - F11
+     *  0 - 5 : Send 1 - 6
+     *  6 - 9 : FX 1 - 4
+     *  10    : Gain
+     *
+     * @param noteOnOff$
+     * @returns
+     */
+    getSof(): Observable<number> {
+        return this.noteOn$[0].pipe(
+            map(noteMsg => {
+                const noteState: Array<boolean> = (noteMsg.target as any).notesState.slice(54, 65)
 
+                return noteState.indexOf(true);
+            }),
+            distinctUntilChanged()
+        );
+    }
 }
 
 
